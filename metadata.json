@@ -1,0 +1,5 @@
+{
+  "name": "PromoHunter AI",
+  "description": "A smart discount and bonus finder that searches the web and social mentions for the best local deals using Google Gemini Search Grounding.",
+  "requestFramePermissions": []
+}
