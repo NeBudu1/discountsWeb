@@ -4,8 +4,13 @@ import { Deal, SearchParams } from "../types";
 export const searchDeals = async (params: SearchParams): Promise<Deal[]> => {
   const { city, query, platform } = params;
 
-  // Initialize the client inside the function to ensure process.env is ready
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please check Vercel Environment Variables (API_KEY).");
+  }
+
+  // Initialize the client inside the function
+  const ai = new GoogleGenAI({ apiKey: apiKey });
 
   let platformPrompt = "";
   if (platform === 'instagram') platformPrompt = "Focus on finding results from Instagram mentions or aggregators.";
@@ -44,9 +49,6 @@ export const searchDeals = async (params: SearchParams): Promise<Deal[]> => {
     const text = response.text || "";
     
     // Extract grounding chunks (URLs) to try and match them to our results
-    // In a real complex app, we would do more sophisticated matching. 
-    // Here we will try to assign the most relevant link from metadata if available, 
-    // otherwise rely on the text description or generic search.
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     const links = groundingChunks
       .map(chunk => chunk.web?.uri || "")
@@ -62,9 +64,7 @@ export const searchDeals = async (params: SearchParams): Promise<Deal[]> => {
       const location = parts[2]?.trim() || city;
       const source = parts[3]?.trim() || "Web";
 
-      // Assign a link from grounding chunks round-robin style if we have them, 
-      // simply to ensure every card has a valid "Read More" destination 
-      // (Since Gemini text output doesn't perfectly map 1:1 to chunks in raw text mode easily)
+      // Assign a link from grounding chunks round-robin style
       const sourceUrl = links[index % links.length] || `https://www.google.com/search?q=${encodeURIComponent(title + " " + city)}`;
 
       // Determine a category for image generation logic later
@@ -88,8 +88,12 @@ export const searchDeals = async (params: SearchParams): Promise<Deal[]> => {
 
     return deals;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error searching deals:", error);
+    // Return a user-friendly error if it's related to the key
+    if (error.message && error.message.includes("API Key")) {
+        throw error;
+    }
     throw new Error("Failed to fetch deals. Please try again.");
   }
 };
