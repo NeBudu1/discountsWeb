@@ -4,9 +4,15 @@ import { Deal, SearchParams } from "../types";
 export const searchDeals = async (params: SearchParams): Promise<Deal[]> => {
   const { city, query, platform } = params;
 
+  // Debugging: Check if key is injected
+  // Note: Vite replaces process.env.API_KEY with the actual string during build
   const apiKey = process.env.API_KEY;
+  
   if (!apiKey) {
-    throw new Error("API Key is missing. Please check Vercel Environment Variables (API_KEY).");
+    console.error("API Key check failed. process.env.API_KEY is undefined or empty.");
+    throw new Error("API Key is missing. Please check Vercel Environment Variables (API_KEY) and Redeploy.");
+  } else {
+    console.log("API Key found (length):", apiKey.length);
   }
 
   // Initialize the client inside the function
